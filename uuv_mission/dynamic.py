@@ -153,11 +153,25 @@ class ClosedLoop:
         actions = np.zeros(T)
         self.plant.reset_state()
 
+        # If controller has a reset method, call it to clear internal state (e.g., last_error)
+        if hasattr(self.controller, "reset"):
+            self.controller.reset()
+
         for t in range(T):
             positions[t] = self.plant.get_position()
             observation_t = self.plant.get_depth()
-            # Call your controller here
-            self.plant.transition(actions[t], disturbances[t])
+
+            # Compute control action using the controller interface.
+            # We expect controller to provide a step(reference, observation) -> action
+            ref_t = mission.reference[t]
+            if hasattr(self.controller, "step"):
+                action = self.controller.step(ref_t, observation_t)
+            else:
+                # If controller is a simple callable: controller(reference, observation)
+                action = self.controller(ref_t, observation_t)
+
+            actions[t] = action
+            self.plant.transition(action, disturbances[t])
 
         return Trajectory(positions)
         
