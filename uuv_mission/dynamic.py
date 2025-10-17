@@ -75,9 +75,67 @@ class Mission:
 
     @classmethod
     def from_csv(cls, file_name: str):
-        # You are required to implement this method
-        # Cool
-        pass
+        """
+        Load mission data from a CSV file. Expected columns (case-insensitive):
+        'reference', 'cave_height', 'cave_depth'.
+        If these column names are not present, the method falls back to using
+        the first three columns in the file in that order.
+        """
+        import csv
+        import numpy as np
+
+        ref_list = []
+        h_list = []
+        d_list = []
+
+        with open(file_name, newline='') as f:
+            reader = csv.reader(f)
+            try:
+                header = next(reader)
+            except StopIteration:
+                raise ValueError(f"CSV file '{file_name}' is empty")
+
+            lower_header = [h.strip().lower() for h in header]
+
+            # Attempt to find named columns
+            try:
+                idx_ref = lower_header.index('reference')
+                idx_h = lower_header.index('cave_height')
+                idx_d = lower_header.index('cave_depth')
+
+                for row in reader:
+                    if not row:
+                        continue
+                    # guard against short rows
+                    if max(idx_ref, idx_h, idx_d) >= len(row):
+                        raise ValueError("Row in CSV has fewer columns than expected based on header")
+                    ref_list.append(float(row[idx_ref]))
+                    h_list.append(float(row[idx_h]))
+                    d_list.append(float(row[idx_d]))
+            except ValueError:
+                # Fallback: assume first three columns are reference, cave_height, cave_depth
+                # Reset reader to start after header
+                f.seek(0)
+                reader = csv.reader(f)
+                next(reader)  # skip header
+                for row in reader:
+                    if not row:
+                        continue
+                    if len(row) < 3:
+                        raise ValueError("CSV fallback expects at least 3 columns per row")
+                    ref_list.append(float(row[0]))
+                    h_list.append(float(row[1]))
+                    d_list.append(float(row[2]))
+
+        # Convert to numpy arrays and validate lengths
+        reference = np.array(ref_list, dtype=float)
+        cave_height = np.array(h_list, dtype=float)
+        cave_depth = np.array(d_list, dtype=float)
+
+        if not (len(reference) == len(cave_height) == len(cave_depth)):
+            raise ValueError("Loaded columns have mismatched lengths")
+
+        return cls(reference, cave_height, cave_depth)
 
 
 class ClosedLoop:
