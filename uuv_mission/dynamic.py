@@ -62,6 +62,10 @@ class Trajectory:
         plt.legend(loc='upper right')
         plt.show()
 
+    def get_actual_trajectory(self) -> np.ndarray:
+        """Return the y-coordinates of the trajectory."""
+        return self.position[:, 1]
+
 @dataclass
 class Mission:
     reference: np.ndarray
@@ -137,6 +141,9 @@ class Mission:
 
         return cls(reference, cave_height, cave_depth)
 
+    def get_reference_trajectory(self) -> np.ndarray:
+        """Return reference trajectory for comparison."""
+        return self.reference
 
 class ClosedLoop:
     def __init__(self, plant: Submarine, controller):
